@@ -49,6 +49,7 @@ struct ModeConfig: Codable, Identifiable, Equatable {
     var triggerGroups: [ModeTriggerGroup]?
     var triggerWords: [String] = []
     var isAIEnhancementEnabled: Bool
+    var enhancementCharacterThreshold: Int?
     var selectedPrompt: String?
     var selectedTranscriptionModelName: String?
     var isRealtimeTranscriptionEnabled: Bool = true
@@ -70,6 +71,7 @@ struct ModeConfig: Codable, Identifiable, Equatable {
             selectedPrompt, isRealtimeTranscriptionEnabled, selectedLanguage, isTextFormattingEnabled,
             useClipboardContext, useSelectedTextContext, useScreenCapture, selectedAIProvider, selectedAIModel,
             outputMode, autoSendKey, isAutoSendEnabled, customCommand, isEnabled, isDefault
+        case enhancementCharacterThreshold
         case legacyEmoji = "emoji"
         case selectedWhisperModel
         case selectedTranscriptionModelName
@@ -85,7 +87,7 @@ struct ModeConfig: Codable, Identifiable, Equatable {
         isTextFormattingEnabled: Bool = false, selectedAIProvider: String? = nil, selectedAIModel: String? = nil,
         outputMode: ModeOutputMode = .paste, autoSendKey: FinishAndSendKey = .none,
         customCommand: ModeCustomCommand? = nil,
-        isEnabled: Bool = true, isDefault: Bool = false
+        isEnabled: Bool = true, isDefault: Bool = false, enhancementCharacterThreshold: Int? = nil
     ) {
         self.id = id
         self.name = name
@@ -95,6 +97,7 @@ struct ModeConfig: Codable, Identifiable, Equatable {
         self.triggerGroups = triggerGroups
         self.triggerWords = Self.normalizedTriggerWords(triggerWords)
         self.isAIEnhancementEnabled = isAIEnhancementEnabled
+        self.enhancementCharacterThreshold = enhancementCharacterThreshold.map { max(0, $0) }
         self.selectedPrompt = selectedPrompt
         self.useClipboardContext = useClipboardContext
         self.useSelectedTextContext = useSelectedTextContext
@@ -142,6 +145,8 @@ struct ModeConfig: Codable, Identifiable, Equatable {
         triggerWords = Self.normalizedTriggerWords(
             try container.decodeIfPresent([String].self, forKey: .triggerWords) ?? [])
         isAIEnhancementEnabled = try container.decode(Bool.self, forKey: .isAIEnhancementEnabled)
+        enhancementCharacterThreshold = try container.decodeIfPresent(Int.self, forKey: .enhancementCharacterThreshold)
+            .map { max(0, $0) }
         selectedPrompt = try container.decodeIfPresent(String.self, forKey: .selectedPrompt)
         isRealtimeTranscriptionEnabled =
             try container.decodeIfPresent(Bool.self, forKey: .isRealtimeTranscriptionEnabled) ?? true
@@ -196,6 +201,7 @@ struct ModeConfig: Codable, Identifiable, Equatable {
         try container.encodeIfPresent(triggerGroups, forKey: .triggerGroups)
         if !triggerWords.isEmpty { try container.encode(triggerWords, forKey: .triggerWords) }
         try container.encode(isAIEnhancementEnabled, forKey: .isAIEnhancementEnabled)
+        try container.encodeIfPresent(enhancementCharacterThreshold, forKey: .enhancementCharacterThreshold)
         try container.encodeIfPresent(selectedPrompt, forKey: .selectedPrompt)
         try container.encode(isRealtimeTranscriptionEnabled, forKey: .isRealtimeTranscriptionEnabled)
         try container.encodeIfPresent(selectedLanguage, forKey: .selectedLanguage)

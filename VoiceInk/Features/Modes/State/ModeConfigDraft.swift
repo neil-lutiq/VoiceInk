@@ -9,6 +9,8 @@ struct ModeConfigDraft {
     var triggerGroups: [ModeTriggerGroup]
     var triggerWords: [String]
     var isAIEnhancementEnabled: Bool
+    var isEnhancementLengthLimitEnabled: Bool
+    var enhancementCharacterThreshold: Int
     var selectedPromptId: UUID?
     var selectedTranscriptionModelName: String?
     var isRealtimeTranscriptionEnabled: Bool
@@ -40,6 +42,8 @@ struct ModeConfigDraft {
             triggerGroups = []
             triggerWords = []
             isAIEnhancementEnabled = false
+            isEnhancementLengthLimitEnabled = false
+            enhancementCharacterThreshold = 300
             selectedPromptId = inheritedConfig?.selectedPrompt.flatMap { UUID(uuidString: $0) }
             selectedTranscriptionModelName = inheritedConfig?.selectedTranscriptionModelName
             isRealtimeTranscriptionEnabled = true
@@ -67,6 +71,8 @@ struct ModeConfigDraft {
             triggerGroups = latestConfig.triggerGroups ?? []
             triggerWords = latestConfig.triggerWords
             isAIEnhancementEnabled = latestConfig.isAIEnhancementEnabled
+            isEnhancementLengthLimitEnabled = latestConfig.enhancementCharacterThreshold != nil
+            enhancementCharacterThreshold = latestConfig.enhancementCharacterThreshold ?? 300
             selectedPromptId = latestConfig.selectedPrompt.flatMap { UUID(uuidString: $0) }
             selectedTranscriptionModelName = latestConfig.selectedTranscriptionModelName
             isRealtimeTranscriptionEnabled = latestConfig.isRealtimeTranscriptionEnabled
@@ -166,6 +172,7 @@ struct ModeConfigDraft {
         let savedAutoSendKey: FinishAndSendKey = outputMode == .paste ? autoSendKey : .none
         let savedIsDefault = outputMode == .respond ? false : isDefault
         let savedCustomCommand = makeCustomCommand()
+        let savedCharacterThreshold = isEnhancementLengthLimitEnabled ? max(0, enhancementCharacterThreshold) : nil
 
         switch mode {
         case .add:
@@ -191,7 +198,8 @@ struct ModeConfigDraft {
                 outputMode: outputMode,
                 autoSendKey: savedAutoSendKey,
                 customCommand: savedCustomCommand,
-                isDefault: savedIsDefault
+                isDefault: savedIsDefault,
+                enhancementCharacterThreshold: savedCharacterThreshold
             )
 
         case .edit(let config):
@@ -203,6 +211,7 @@ struct ModeConfigDraft {
             updatedConfig.triggerGroups = triggerGroups.isEmpty ? nil : triggerGroups
             updatedConfig.triggerWords = ModeConfig.normalizedTriggerWords(triggerWords)
             updatedConfig.isAIEnhancementEnabled = isAIEnhancementEnabled
+            updatedConfig.enhancementCharacterThreshold = savedCharacterThreshold
             updatedConfig.selectedPrompt = selectedPromptId?.uuidString
             updatedConfig.selectedTranscriptionModelName = selectedTranscriptionModelName
             updatedConfig.isRealtimeTranscriptionEnabled = isRealtimeTranscriptionEnabled

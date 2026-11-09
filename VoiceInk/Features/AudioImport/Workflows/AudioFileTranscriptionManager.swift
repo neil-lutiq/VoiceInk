@@ -209,7 +209,7 @@ class AudioTranscriptionManager: ObservableObject {
 
             if let enhancementService = engine.enhancementService,
                 let enhancementConfiguration,
-                enhancementConfiguration.isEnabled,
+                enhancementConfiguration.shouldEnhance(text),
                 enhancementService.isConfigured(for: enhancementConfiguration)
             {
                 item.status = .processing(phase: .enhancing)

@@ -370,6 +370,29 @@ struct ModeConfigFormView: View {
             )
 
             if draft.isAIEnhancementEnabled {
+                if draft.outputMode != .respond {
+                    Toggle("Only enhance longer transcriptions", isOn: $draft.isEnhancementLengthLimitEnabled)
+                    if draft.isEnhancementLengthLimitEnabled {
+                        HStack {
+                            Text("More than")
+                            TextField(
+                                "Characters", value: $draft.enhancementCharacterThreshold,
+                                format: .number.grouping(.never)
+                            )
+                            .labelsHidden()
+                            .textFieldStyle(.roundedBorder)
+                            .accessibilityLabel("Character limit")
+                            .frame(width: 80)
+                            .multilineTextAlignment(.trailing)
+                            .accessibilityIdentifier("enhancementCharacterThreshold")
+                            Text("characters")
+                        }
+                        Text("Text at or below the limit skips AI enhancement. Spaces and punctuation count.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 let providerOptions = aiProviderOptions
 
                 if providerOptions.isEmpty {

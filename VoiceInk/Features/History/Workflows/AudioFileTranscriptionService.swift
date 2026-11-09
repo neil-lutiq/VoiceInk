@@ -122,7 +122,7 @@ class AudioTranscriptionService: ObservableObject {
             // Apply AI enhancement if enabled
             if let enhancementService = enhancementService,
                 let enhancementConfiguration,
-                enhancementConfiguration.isEnabled,
+                enhancementConfiguration.shouldEnhance(text),
                 enhancementService.isConfigured(for: enhancementConfiguration)
             {
                 do {

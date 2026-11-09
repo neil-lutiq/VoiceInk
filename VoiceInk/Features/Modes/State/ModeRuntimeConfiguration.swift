@@ -36,6 +36,11 @@ struct EnhancementRuntimeConfiguration {
     let useSelectedTextContext: Bool
     let useScreenCaptureContext: Bool
 
+    func shouldEnhance(_ text: String) -> Bool {
+        isEnabled && (mode?.outputMode == .respond
+            || EnhancementLengthPolicy.allows(text, threshold: mode?.enhancementCharacterThreshold))
+    }
+
     func replacingPrompt(_ prompt: CustomPrompt) -> EnhancementRuntimeConfiguration {
         EnhancementRuntimeConfiguration(
             mode: mode,
