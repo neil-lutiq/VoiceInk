@@ -116,6 +116,15 @@ struct ModeConfigEditorView: View {
         let validator = ModeValidator(modeManager: modeManager)
         validationErrors = validator.validateForSave(config: config, mode: mode)
 
+        if let route = config.longTranscriptionRoute,
+            !transcriptionModelManager.usableModels.contains(where: {
+                $0.selectionKey == route.modelSelectionKey
+                    && !TranscriptionRealtimeSupport.isRequired(for: $0)
+            })
+        {
+            validationErrors.append(.invalidLongTranscriptionModel)
+        }
+
         if !validationErrors.isEmpty {
             showValidationAlert = true
             return

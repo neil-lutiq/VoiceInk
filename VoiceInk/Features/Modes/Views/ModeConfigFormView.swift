@@ -230,6 +230,7 @@ struct ModeConfigFormView: View {
                 }
 
                 realtimeToggle
+                longTranscriptionRoutingControls
             }
 
             languagePicker
@@ -244,6 +245,57 @@ struct ModeConfigFormView: View {
                         InfoTip("Apply intelligent text formatting to break large block of text into paragraphs.")
                     }
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var longTranscriptionRoutingControls: some View {
+        Toggle("Use another model for longer transcriptions", isOn: $draft.isLongTranscriptionRoutingEnabled)
+            .accessibilityIdentifier("longTranscriptionRoutingEnabled")
+
+        if draft.isLongTranscriptionRoutingEnabled {
+            let models = warmupSnapshot.usableTranscriptionModels.filter {
+                $0.selectionKey != draft.selectedTranscriptionModelName
+                    && !TranscriptionRealtimeSupport.isRequired(for: $0)
+            }
+
+            HStack {
+                Text("More than")
+                TextField(
+                    "Characters", value: $draft.longTranscriptionCharacterThreshold,
+                    format: .number.grouping(.never)
+                )
+                .labelsHidden()
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 80)
+                .multilineTextAlignment(.trailing)
+                .accessibilityLabel("Transcription character threshold")
+                .accessibilityIdentifier("longTranscriptionCharacterThreshold")
+                Text("characters")
+            }
+
+            Picker("Long transcription model", selection: $draft.longTranscriptionModelName) {
+                Text("Select a model").tag(nil as String?)
+                if let savedModel = draft.longTranscriptionModelName,
+                    !models.contains(where: { $0.selectionKey == savedModel })
+                {
+                    Text("Unavailable").tag(savedModel as String?)
+                }
+                ForEach(models, id: \.selectionKey) { model in
+                    Text(model.displayName).tag(model.selectionKey as String?)
+                }
+            }
+            .accessibilityIdentifier("longTranscriptionModel")
+
+            Text("The first model runs for every recording. Above the limit, the selected model transcribes the same audio again. Spaces and punctuation count. Cloud models upload the recording and may incur charges. If the second pass fails, the first transcript is kept.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if models.isEmpty {
+                Text("Connect another provider or download a model in AI Models. The second model must support recorded audio.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }

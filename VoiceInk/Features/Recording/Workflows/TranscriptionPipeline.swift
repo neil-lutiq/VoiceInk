@@ -73,6 +73,7 @@ class TranscriptionPipeline {
             vocabularyPreparation.finish()
         }
         let model = transcriptionConfiguration.model
+        var completedModel = model
         var finalText: String?
         var responseError: String?
         var outputForDelivery: OutputRuntimeConfiguration?
@@ -120,8 +121,18 @@ class TranscriptionPipeline {
                     context: transcriptionConfiguration.requestContext.withVocabulary(transcriptionVocabulary)
                 )
             }
-            let vocabulary = vocabularyPreparation.finish()
             text = TranscriptionOutputFilter.filter(text, language: transcriptionConfiguration.language)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let routed = try await serviceRegistry.routeLongTranscription(
+                text,
+                audioURL: audioURL,
+                configuration: transcriptionConfiguration,
+                vocabulary: vocabularyPreparation.current,
+                shouldCancel: shouldCancel
+            )
+            text = routed.text
+            completedModel = routed.model
+            let vocabulary = vocabularyPreparation.finish()
             let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
 
             if shouldCancel() {
@@ -162,7 +173,7 @@ class TranscriptionPipeline {
 
             transcription.text = cleanedText
             transcription.duration = actualDuration
-            transcription.transcriptionModelName = model.displayName
+            transcription.transcriptionModelName = completedModel.displayName
             transcription.transcriptionDuration = transcriptionDuration
             transcription.modeName = modeMetadata.name
             transcription.modeEmoji = modeMetadata.emoji
@@ -261,6 +272,10 @@ class TranscriptionPipeline {
 
             transcription.transcriptionStatus = TranscriptionStatus.completed.rawValue
         } catch {
+            if shouldCancel() || Task.isCancelled || error is CancellationError {
+                await finishCanceledTranscription()
+                return
+            }
             vocabularyPreparation.finish()
             let errorDescription = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
 
@@ -287,7 +302,7 @@ class TranscriptionPipeline {
                 do {
                     didInsertSessionMetric = try SessionMetricRecorder.recordRecorderSession(
                         transcription: transcription,
-                        model: model,
+                        model: completedModel,
                         in: modelContext
                     )
                 } catch {

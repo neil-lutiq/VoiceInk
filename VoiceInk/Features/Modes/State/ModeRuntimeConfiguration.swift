@@ -5,6 +5,7 @@ struct TranscriptionRuntimeConfiguration {
     let model: any TranscriptionModel
     let language: String
     let isRealtimeEnabled: Bool
+    let longTranscriptionModel: (any TranscriptionModel)?
 
     var metadata: (name: String?, emoji: String?) {
         guard mode.isEnabled else {
@@ -112,12 +113,14 @@ enum ModeRuntimeResolver {
             from: transcriptionModelResolution(
                 mode: mode,
                 transcriptionModelManager: transcriptionModelManager
-            )
+            ),
+            transcriptionModelManager: transcriptionModelManager
         )
     }
 
     static func transcriptionConfiguration(
-        from resolution: ModeTranscriptionModelResolution
+        from resolution: ModeTranscriptionModelResolution,
+        transcriptionModelManager: TranscriptionModelManager
     ) -> TranscriptionRuntimeConfiguration? {
         guard
             case .available(let mode, let model) = resolution
@@ -131,12 +134,22 @@ enum ModeRuntimeResolver {
             realtimeEnabled: mode.isRealtimeTranscriptionEnabled
         )
 
+        let longTranscriptionModel = mode.longTranscriptionRoute.flatMap { route in
+            TranscriptionModelRegistry.model(
+                forSelectionKey: route.modelSelectionKey,
+                in: transcriptionModelManager.usableModels
+            )
+        }.flatMap { model in
+            TranscriptionRealtimeSupport.isRequired(for: model) ? nil : model
+        }
+
         return TranscriptionRuntimeConfiguration(
             mode: mode,
             model: model,
             language: language,
             isRealtimeEnabled: TranscriptionRealtimeSupport.isEnabled(
-                for: model, modeValue: mode.isRealtimeTranscriptionEnabled)
+                for: model, modeValue: mode.isRealtimeTranscriptionEnabled),
+            longTranscriptionModel: longTranscriptionModel
         )
     }
 

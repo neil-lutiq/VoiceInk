@@ -39,6 +39,21 @@ My goal is to make it **the most efficient and privacy-focused voice-to-text sol
 - 🔄 **Smart Modes**: Instantly switch between AI-powered modes optimized for different writing styles and contexts
 - 🤖 **AI Assistant**: Built-in voice assistant mode for a quick chatGPT like conversational assistant
 
+### Transcription model routing (this fork)
+
+In **Modes → edit a mode → Transcription**, enable **Use another model for longer transcriptions**. Set the character threshold and choose a second transcription model. The second model must be downloaded or connected in **AI Models** and support recorded audio.
+
+For example, choose **Parakeet Ultra** as the main model, **300** as the threshold, and **Scribe V3** as the long transcription model:
+
+| First transcript length | Final transcription |
+| --- | --- |
+| 300 characters or fewer | Keep Parakeet Ultra's transcript |
+| More than 300 characters | Transcribe the same audio once more with Scribe V3 |
+
+The first model runs for every recording because the character count is only known after transcription. The count uses the filtered, trimmed transcript before vocabulary corrections, formatting, or AI Enhancement. Spaces, punctuation, and Unicode characters count. Longer recordings take a second pass; cloud models receive the audio and may incur API charges. If that pass fails or returns no text, VoiceInk keeps the first transcript and shows a warning.
+
+This setting applies to dictation, file imports, and history retries using the mode. AI Enhancement remains a separate, optional text-processing step. Existing modes keep their current behavior until routing is enabled.
+
 ## Get Started
 
 ### Download

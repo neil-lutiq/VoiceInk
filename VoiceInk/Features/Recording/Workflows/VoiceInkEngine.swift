@@ -331,7 +331,8 @@ class VoiceInkEngine: NSObject, ObservableObject {
                             )
                             guard
                                 let transcriptionConfiguration = ModeRuntimeResolver.transcriptionConfiguration(
-                                    from: modelResolution
+                                    from: modelResolution,
+                                    transcriptionModelManager: self.transcriptionModelManager
                                 )
                             else {
                                 let failure = self.recordingModelFailure(for: modelResolution)

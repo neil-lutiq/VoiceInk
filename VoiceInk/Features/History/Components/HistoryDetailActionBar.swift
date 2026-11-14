@@ -257,8 +257,7 @@ struct HistoryDetailActionBar: View {
             do {
                 let result = try await service.retranscribeAudio(
                     from: audioURL,
-                    using: configuration.model,
-                    mode: mode
+                    configuration: configuration
                 )
                 await MainActor.run {
                     isWorking = false

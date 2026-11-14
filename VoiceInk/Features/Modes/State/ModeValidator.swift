@@ -4,6 +4,7 @@ import SwiftUI
 enum ModeValidationError: Error, Identifiable {
     case emptyName
     case missingTranscriptionModel
+    case invalidLongTranscriptionModel
     case missingEnhancementModel
     case emptyCustomCommand
     case duplicateName(String)
@@ -14,6 +15,7 @@ enum ModeValidationError: Error, Identifiable {
         switch self {
         case .emptyName: return "emptyName"
         case .missingTranscriptionModel: return "missingTranscriptionModel"
+        case .invalidLongTranscriptionModel: return "invalidLongTranscriptionModel"
         case .missingEnhancementModel: return "missingEnhancementModel"
         case .emptyCustomCommand: return "emptyCustomCommand"
         case .duplicateName: return "duplicateName"
@@ -28,6 +30,8 @@ enum ModeValidationError: Error, Identifiable {
             return String(localized: "Mode name cannot be empty.")
         case .missingTranscriptionModel:
             return String(localized: "A transcription model must be selected.")
+        case .invalidLongTranscriptionModel:
+            return String(localized: "Select a different, available model for longer transcriptions.")
         case .missingEnhancementModel:
             return String(localized: "Enter a model ID for AI enhancement.")
         case .emptyCustomCommand:
@@ -69,6 +73,13 @@ struct ModeValidator {
 
         if config.selectedTranscriptionModelName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false {
             errors.append(.missingTranscriptionModel)
+        }
+
+        if let route = config.longTranscriptionRoute,
+            route.modelSelectionKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                || route.modelSelectionKey == config.selectedTranscriptionModelName
+        {
+            errors.append(.invalidLongTranscriptionModel)
         }
 
         if config.isAIEnhancementEnabled,

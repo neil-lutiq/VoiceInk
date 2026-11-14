@@ -43,7 +43,7 @@ class AudioTranscriptionService: ObservableObject {
         self.serviceRegistry = serviceRegistry
     }
 
-    func retranscribeAudio(from url: URL, using model: any TranscriptionModel, mode: ModeConfig? = nil) async throws
+    func retranscribeAudio(from url: URL, configuration: TranscriptionRuntimeConfiguration) async throws
         -> AudioRetranscriptionResult
     {
         guard FileManager.default.fileExists(atPath: url.path) else {
@@ -55,11 +55,12 @@ class AudioTranscriptionService: ObservableObject {
         }
 
         do {
-            let mode = mode ?? ModeManager.shared.currentEffectiveConfiguration
+            let mode = configuration.mode
+            var model = configuration.model
             let language = TranscriptionLanguageSupport.validLanguageOrFallback(
-                mode?.selectedLanguage,
+                mode.selectedLanguage,
                 for: model,
-                realtimeEnabled: mode?.isRealtimeTranscriptionEnabled
+                realtimeEnabled: false
             )
             let vocabulary = CustomVocabularyService.shared.loadSavedVocabulary(from: modelContext)
             let requestContext = TranscriptionRequestContext(
@@ -67,14 +68,22 @@ class AudioTranscriptionService: ObservableObject {
                 prompt: model.provider == .whisper ? WhisperPrompt.resolvedPrompt(for: language) : nil,
                 vocabulary: vocabulary
             )
-            let modeName = (mode?.isEnabled == true) ? mode?.name : nil
-            let modeEmoji = (mode?.isEnabled == true) ? mode?.icon.value : nil
+            let modeName = mode.isEnabled ? mode.name : nil
+            let modeEmoji = mode.isEnabled ? mode.icon.value : nil
 
             let transcriptionStart = Date()
             var text = try await serviceRegistry.transcribe(audioURL: url, model: model, context: requestContext)
-            let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
             text = TranscriptionOutputFilter.filter(text, language: language)
             text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            let routed = try await serviceRegistry.routeLongTranscription(
+                text,
+                audioURL: url,
+                configuration: configuration,
+                vocabulary: vocabulary
+            )
+            text = routed.text
+            model = routed.model
+            let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
             text = try await vocabulary.correctTranscription(text)
             let formattingConfiguration = ModeRuntimeResolver.transcriptionFormattingConfiguration(mode: mode)
 

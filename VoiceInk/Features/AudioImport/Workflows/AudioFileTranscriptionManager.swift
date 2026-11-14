@@ -137,7 +137,7 @@ class AudioTranscriptionManager: ObservableObject {
             else {
                 throw TranscriptionError.noModelSelected
             }
-            let currentModel = transcriptionConfiguration.model
+            var currentModel = transcriptionConfiguration.model
 
             // Phase: Loading
             item.status = .processing(phase: .loading)
@@ -177,9 +177,17 @@ class AudioTranscriptionManager: ObservableObject {
                 model: currentModel,
                 context: transcriptionConfiguration.requestContext.withVocabulary(vocabulary)
             )
-            let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
             text = TranscriptionOutputFilter.filter(text, language: transcriptionConfiguration.language)
             text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            let routed = try await serviceRegistry.routeLongTranscription(
+                text,
+                audioURL: permanentURL,
+                configuration: transcriptionConfiguration,
+                vocabulary: vocabulary
+            )
+            text = routed.text
+            currentModel = routed.model
+            let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
             text = try await vocabulary.correctTranscription(text)
 
             let modeMetadata = transcriptionConfiguration.metadata

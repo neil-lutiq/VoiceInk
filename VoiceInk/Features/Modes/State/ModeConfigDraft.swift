@@ -13,6 +13,9 @@ struct ModeConfigDraft {
     var enhancementCharacterThreshold: Int
     var selectedPromptId: UUID?
     var selectedTranscriptionModelName: String?
+    var isLongTranscriptionRoutingEnabled: Bool
+    var longTranscriptionCharacterThreshold: Int
+    var longTranscriptionModelName: String?
     var isRealtimeTranscriptionEnabled: Bool
     var selectedLanguage: String?
     var isTextFormattingEnabled: Bool
@@ -46,6 +49,9 @@ struct ModeConfigDraft {
             enhancementCharacterThreshold = 300
             selectedPromptId = inheritedConfig?.selectedPrompt.flatMap { UUID(uuidString: $0) }
             selectedTranscriptionModelName = inheritedConfig?.selectedTranscriptionModelName
+            isLongTranscriptionRoutingEnabled = false
+            longTranscriptionCharacterThreshold = 300
+            longTranscriptionModelName = nil
             isRealtimeTranscriptionEnabled = true
             selectedLanguage = inheritedConfig?.selectedLanguage
             isTextFormattingEnabled = true
@@ -75,6 +81,9 @@ struct ModeConfigDraft {
             enhancementCharacterThreshold = latestConfig.enhancementCharacterThreshold ?? 300
             selectedPromptId = latestConfig.selectedPrompt.flatMap { UUID(uuidString: $0) }
             selectedTranscriptionModelName = latestConfig.selectedTranscriptionModelName
+            isLongTranscriptionRoutingEnabled = latestConfig.longTranscriptionRoute != nil
+            longTranscriptionCharacterThreshold = latestConfig.longTranscriptionRoute?.characterThreshold ?? 300
+            longTranscriptionModelName = latestConfig.longTranscriptionRoute?.modelSelectionKey
             isRealtimeTranscriptionEnabled = latestConfig.isRealtimeTranscriptionEnabled
             selectedLanguage = latestConfig.selectedLanguage
             isTextFormattingEnabled = latestConfig.isTextFormattingEnabled
@@ -173,6 +182,11 @@ struct ModeConfigDraft {
         let savedIsDefault = outputMode == .respond ? false : isDefault
         let savedCustomCommand = makeCustomCommand()
         let savedCharacterThreshold = isEnhancementLengthLimitEnabled ? max(0, enhancementCharacterThreshold) : nil
+        let savedTranscriptionRoute = isLongTranscriptionRoutingEnabled
+            ? TranscriptionLengthRoute(
+                characterThreshold: longTranscriptionCharacterThreshold,
+                modelSelectionKey: longTranscriptionModelName ?? ""
+            ) : nil
 
         switch mode {
         case .add:
@@ -199,7 +213,8 @@ struct ModeConfigDraft {
                 autoSendKey: savedAutoSendKey,
                 customCommand: savedCustomCommand,
                 isDefault: savedIsDefault,
-                enhancementCharacterThreshold: savedCharacterThreshold
+                enhancementCharacterThreshold: savedCharacterThreshold,
+                longTranscriptionRoute: savedTranscriptionRoute
             )
 
         case .edit(let config):
@@ -214,6 +229,7 @@ struct ModeConfigDraft {
             updatedConfig.enhancementCharacterThreshold = savedCharacterThreshold
             updatedConfig.selectedPrompt = selectedPromptId?.uuidString
             updatedConfig.selectedTranscriptionModelName = selectedTranscriptionModelName
+            updatedConfig.longTranscriptionRoute = savedTranscriptionRoute
             updatedConfig.isRealtimeTranscriptionEnabled = isRealtimeTranscriptionEnabled
             updatedConfig.selectedLanguage = selectedLanguage
             updatedConfig.isTextFormattingEnabled = isTextFormattingEnabled

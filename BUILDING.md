@@ -45,6 +45,15 @@ Local builds do not include iCloud dictionary sync or automatic updates. Ad-hoc 
 - `make clean` — remove `~/VoiceInk-Dependencies`
 - `make help` — list all commands
 
+## Feature Regression Checks
+
+```bash
+scripts/test-enhancement-length.sh
+scripts/test-transcription-routing.sh
+```
+
+These checks run without API calls. Routing checks cover the 300/301 boundary, Unicode, disabled routing, a single second pass, failure fallback, cancellation, and saved rules.
+
 ## Build with Xcode
 
 ```bash

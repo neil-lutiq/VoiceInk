@@ -62,6 +62,57 @@ class TranscriptionServiceRegistry {
         )
     }
 
+    /// Selects the final transcript before formatting or enhancement, using a single optional batch pass.
+    func routeLongTranscription(
+        _ text: String,
+        audioURL: URL,
+        configuration: TranscriptionRuntimeConfiguration,
+        vocabulary: RecordingVocabulary,
+        shouldCancel: () -> Bool = { false }
+    ) async throws -> (text: String, model: any TranscriptionModel) {
+        let primaryModel = configuration.model
+        let targetModel = configuration.longTranscriptionModel
+        let result = try await TranscriptionLengthRouter.route(
+            text,
+            primaryModelKey: primaryModel.selectionKey,
+            rule: configuration.mode.longTranscriptionRoute,
+            shouldCancel: shouldCancel
+        ) { modelKey in
+            guard let targetModel,
+                targetModel.selectionKey == modelKey,
+                targetModel.selectionKey != primaryModel.selectionKey,
+                !TranscriptionRealtimeSupport.isRequired(for: targetModel)
+            else {
+                throw TranscriptionLengthRouter.RoutingError.unavailableModel
+            }
+
+            let language = TranscriptionLanguageSupport.validLanguageOrFallback(
+                configuration.mode.selectedLanguage, for: targetModel, realtimeEnabled: false
+            )
+            let context = TranscriptionRequestContext(
+                language: language,
+                prompt: targetModel.provider == .whisper ? WhisperPrompt.resolvedPrompt(for: language) : nil,
+                vocabulary: vocabulary
+            )
+            let secondText = try await self.transcribe(audioURL: audioURL, model: targetModel, context: context)
+            return TranscriptionOutputFilter.filter(secondText, language: language)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        if let error = result.routingError {
+            logger.warning("Long transcription second pass failed: \(error.localizedDescription, privacy: .public)")
+            NotificationManager.shared.showNotification(
+                title: String(
+                    format: String(localized: "Kept the %@ transcript. The second transcription failed: %@"),
+                    primaryModel.displayName, error.localizedDescription
+                ),
+                type: .warning
+            )
+        }
+
+        return (result.text, result.didSwitchModel ? (targetModel ?? primaryModel) : primaryModel)
+    }
+
     /// Creates a streaming or file-based session for the resolved transcription configuration.
     func createSession(
         for configuration: TranscriptionRuntimeConfiguration, onPartialTranscript: ((String) -> Void)? = nil

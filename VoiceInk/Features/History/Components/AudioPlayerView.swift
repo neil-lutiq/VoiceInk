@@ -670,8 +670,7 @@ struct AudioPlayerView: View {
             do {
                 let result = try await transcriptionService.retranscribeAudio(
                     from: url,
-                    using: transcriptionConfiguration.model,
-                    mode: selectedMode
+                    configuration: transcriptionConfiguration
                 )
                 await MainActor.run {
                     isRetranscribing = false

@@ -52,6 +52,7 @@ struct ModeConfig: Codable, Identifiable, Equatable {
     var enhancementCharacterThreshold: Int?
     var selectedPrompt: String?
     var selectedTranscriptionModelName: String?
+    var longTranscriptionRoute: TranscriptionLengthRoute?
     var isRealtimeTranscriptionEnabled: Bool = true
     var selectedLanguage: String?
     var isTextFormattingEnabled: Bool = false
@@ -72,6 +73,7 @@ struct ModeConfig: Codable, Identifiable, Equatable {
             useClipboardContext, useSelectedTextContext, useScreenCapture, selectedAIProvider, selectedAIModel,
             outputMode, autoSendKey, isAutoSendEnabled, customCommand, isEnabled, isDefault
         case enhancementCharacterThreshold
+        case longTranscriptionRoute
         case legacyEmoji = "emoji"
         case selectedWhisperModel
         case selectedTranscriptionModelName
@@ -87,7 +89,8 @@ struct ModeConfig: Codable, Identifiable, Equatable {
         isTextFormattingEnabled: Bool = false, selectedAIProvider: String? = nil, selectedAIModel: String? = nil,
         outputMode: ModeOutputMode = .paste, autoSendKey: FinishAndSendKey = .none,
         customCommand: ModeCustomCommand? = nil,
-        isEnabled: Bool = true, isDefault: Bool = false, enhancementCharacterThreshold: Int? = nil
+        isEnabled: Bool = true, isDefault: Bool = false, enhancementCharacterThreshold: Int? = nil,
+        longTranscriptionRoute: TranscriptionLengthRoute? = nil
     ) {
         self.id = id
         self.name = name
@@ -108,6 +111,7 @@ struct ModeConfig: Codable, Identifiable, Equatable {
         self.selectedAIProvider = selectedAIProvider
         self.selectedAIModel = selectedAIModel
         self.selectedTranscriptionModelName = selectedTranscriptionModelName
+        self.longTranscriptionRoute = longTranscriptionRoute
         self.isRealtimeTranscriptionEnabled = isRealtimeTranscriptionEnabled
         self.selectedLanguage = selectedLanguage ?? "en"
         self.isTextFormattingEnabled = isTextFormattingEnabled
@@ -148,6 +152,7 @@ struct ModeConfig: Codable, Identifiable, Equatable {
         enhancementCharacterThreshold = try container.decodeIfPresent(Int.self, forKey: .enhancementCharacterThreshold)
             .map { max(0, $0) }
         selectedPrompt = try container.decodeIfPresent(String.self, forKey: .selectedPrompt)
+        longTranscriptionRoute = try container.decodeIfPresent(TranscriptionLengthRoute.self, forKey: .longTranscriptionRoute)
         isRealtimeTranscriptionEnabled =
             try container.decodeIfPresent(Bool.self, forKey: .isRealtimeTranscriptionEnabled) ?? true
         selectedLanguage = try container.decodeIfPresent(String.self, forKey: .selectedLanguage)
@@ -215,6 +220,7 @@ struct ModeConfig: Codable, Identifiable, Equatable {
         try container.encode(autoSendKey, forKey: .autoSendKey)
         try container.encodeIfPresent(customCommand, forKey: .customCommand)
         try container.encodeIfPresent(selectedTranscriptionModelName, forKey: .selectedTranscriptionModelName)
+        try container.encodeIfPresent(longTranscriptionRoute, forKey: .longTranscriptionRoute)
         try container.encode(isEnabled, forKey: .isEnabled)
         try container.encode(isDefault, forKey: .isDefault)
     }
